@@ -22,7 +22,7 @@ class LoginTask extends TaskBase {
             client.information = {
                 id: client.id,
                 ip: client.ip,
-                httpServerPort:httpServerPort,
+                httpServerPort: httpServerPort,
                 user: user,
                 root: root
             }
@@ -30,6 +30,15 @@ class LoginTask extends TaskBase {
             this.success();
         } else if (type == "game") {
             var gameName = msg.readUTFV();
+            client.clientType = type;
+            client.information = {
+                id: client.id,
+                ip: client.ip,
+                name: gameName
+            };
+            client.hasLogin = true;
+            this.success();
+        } else if (type == "remote") {
             client.clientType = type;
             client.information = {
                 id: client.id,

@@ -1,0 +1,12 @@
+{
+  "Trunk": {
+    "url": "https://192.168.1.253/svn/paike/paike_client/Trunk",
+    "user": "limengjie",
+    "password": "lmj111111"
+  },
+  "Branch1": {
+    "url": "https://192.168.1.253/svn/paike/paike_client/Branch1",
+    "user": "limengjie",
+    "password": "lmj111111"
+  }
+}

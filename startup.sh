@@ -1,0 +1,2 @@
+cd remoteServer
+node ES6RemoteServer.js

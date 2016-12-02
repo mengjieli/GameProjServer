@@ -21,24 +21,24 @@ var RemoteClient = function (_WebSocketServerClien) {
     function RemoteClient(connection, big) {
         _classCallCheck(this, RemoteClient);
 
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(RemoteClient).call(this, connection, big));
+        var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(RemoteClient).call(this, connection, big));
 
-        _this.id = RemoteClient.id++;
-        _this.hasLogin = false;
-        _this.ip = connection.remoteAddress;
+        _this2.id = RemoteClient.id++;
+        _this2.hasLogin = false;
+        _this2.ip = connection.remoteAddress;
         while (true) {
-            var code = _this.ip.charCodeAt(0);
+            var code = _this2.ip.charCodeAt(0);
             if (code < 48 || code > 57) {
-                _this.ip = _this.ip.slice(1, _this.ip.length);
+                _this2.ip = _this2.ip.slice(1, _this2.ip.length);
             } else {
                 break;
             }
         }
-        if (_this.ip == "127.0.0.1") {
-            _this.ip = System.IP;
+        if (_this2.ip == "127.0.0.1") {
+            _this2.ip = System.IP;
         }
-        _this.information = {};
-        return _this;
+        _this2.information = {};
+        return _this2;
     }
 
     _createClass(RemoteClient, [{
@@ -181,11 +181,11 @@ var RemoteServer = function (_WebSocketServer) {
     function RemoteServer() {
         _classCallCheck(this, RemoteServer);
 
-        var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(RemoteServer).call(this, RemoteClient));
+        var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(RemoteServer).call(this, RemoteClient));
 
         var txt = new File("./data/Command.json").readContent();
         Config.cmds = JSON.parse(txt);
-        return _this2;
+        return _this3;
     }
 
     _createClass(RemoteServer, [{
@@ -490,7 +490,7 @@ var GetClientListTask = function (_TaskBase3) {
             for (var i = 0; i < clients.length; i++) {
                 bytes.writeUTFV(JSON.stringify(clients[i].information));
             }
-            this.sendData(bytes);
+            this.client.sendData(bytes);
             this.success();
         }
     }]);
@@ -541,6 +541,15 @@ var LoginTask = function (_TaskBase4) {
                 this.success();
             } else if (type == "game") {
                 var gameName = msg.readUTFV();
+                client.clientType = type;
+                client.information = {
+                    id: client.id,
+                    ip: client.ip,
+                    name: gameName
+                };
+                client.hasLogin = true;
+                this.success();
+            } else if (type == "remote") {
                 client.clientType = type;
                 client.information = {
                     id: client.id,
@@ -639,11 +648,86 @@ var TransformTask = function (_TaskBase6) {
 }(TaskBase);
 //////////////////////////End File:remoteServer/tasks/center/TransformTask.js///////////////////////////
 
+//////////////////////////File:remoteServer/tasks/local/GetLocalVersion.js///////////////////////////
+
+
+var GetLocalVersion = function (_TaskBase7) {
+    _inherits(GetLocalVersion, _TaskBase7);
+
+    function GetLocalVersion(user, fromClient, cmd, msg) {
+        _classCallCheck(this, GetLocalVersion);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(GetLocalVersion).call(this, user, fromClient, cmd, msg));
+    }
+
+    /**
+     * 开始执行任务
+     * @param cmd
+     * @param msg
+     */
+
+
+    _createClass(GetLocalVersion, [{
+        key: "startTask",
+        value: function startTask(cmd, msg) {
+            var remoteId = msg.readUIntV();
+            var bytes = new VByteArray();
+            bytes.writeUIntV(this.cmd + 1);
+            bytes.writeUIntV(remoteId);
+            var content = new File("./data/local/Config.json").readContent();
+            var cfg = JSON.parse(content);
+            bytes.writeUTFV(cfg.version);
+            this.sendData(bytes);
+            this.success();
+        }
+    }]);
+
+    return GetLocalVersion;
+}(TaskBase);
+//////////////////////////End File:remoteServer/tasks/local/GetLocalVersion.js///////////////////////////
+
+//////////////////////////File:remoteServer/tasks/local/SaveLocalVersion.js///////////////////////////
+
+
+var SaveLocalVersion = function (_TaskBase8) {
+    _inherits(SaveLocalVersion, _TaskBase8);
+
+    function SaveLocalVersion(user, fromClient, cmd, msg) {
+        _classCallCheck(this, SaveLocalVersion);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(SaveLocalVersion).call(this, user, fromClient, cmd, msg));
+    }
+
+    /**
+     * 开始执行任务
+     * @param cmd
+     * @param msg
+     */
+
+
+    _createClass(SaveLocalVersion, [{
+        key: "startTask",
+        value: function startTask(cmd, msg) {
+            var remoteId = msg.readUIntV();
+            var str = msg.readUTFV();
+            var file = new File("./data/local/Config.json");
+            var content = file.readContent();
+            var cfg = JSON.parse(content);
+            cfg.version = str;
+            file.save(JSON.stringify(cfg));
+            this.success();
+        }
+    }]);
+
+    return SaveLocalVersion;
+}(TaskBase);
+//////////////////////////End File:remoteServer/tasks/local/SaveLocalVersion.js///////////////////////////
+
 //////////////////////////File:remoteServer/tasks/qaTest/GetQATestAccountTask.js///////////////////////////
 
 
-var GetQATestAccountTask = function (_TaskBase7) {
-    _inherits(GetQATestAccountTask, _TaskBase7);
+var GetQATestAccountTask = function (_TaskBase9) {
+    _inherits(GetQATestAccountTask, _TaskBase9);
 
     function GetQATestAccountTask(user, fromClient, cmd, msg) {
         _classCallCheck(this, GetQATestAccountTask);
@@ -705,6 +789,117 @@ var GetQATestAccountTask = function (_TaskBase7) {
 }(TaskBase);
 //////////////////////////End File:remoteServer/tasks/qaTest/GetQATestAccountTask.js///////////////////////////
 
+//////////////////////////File:remoteServer/tasks/svn/UpdateFilesToSVN.js///////////////////////////
+
+
 GetQATestAccountTask.index = 0;
+
+var UpdateFilesToSVN = function (_TaskBase10) {
+    _inherits(UpdateFilesToSVN, _TaskBase10);
+
+    function UpdateFilesToSVN(user, fromClient, cmd, msg) {
+        _classCallCheck(this, UpdateFilesToSVN);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(UpdateFilesToSVN).call(this, user, fromClient, cmd, msg));
+    }
+
+    /**
+     * 开始执行任务
+     * @param cmd
+     * @param msg
+     */
+
+
+    _createClass(UpdateFilesToSVN, [{
+        key: "startTask",
+        value: function startTask(cmd, msg) {
+            var remoteId = msg.readUIntV();
+            var type = msg.readUTFV();
+            if (type == "update") {
+                this.remoteId = remoteId;
+                UpdateFilesToSVN.waits[remoteId] = this;
+                this.svnname = msg.readUTFV();
+                var len = msg.readUIntV();
+                this.setFileLength(len);
+            } else if (type == "file") {
+                var id = msg.readUIntV();
+                var url = msg.readUTFV();
+                var isEnd = msg.readBoolean();
+                var data = [];
+                while (msg.bytesAvailable()) {
+                    data.push(msg.readByte());
+                }
+                UpdateFilesToSVN.waits[id].receiveFile(url, data, isEnd);
+            }
+        }
+    }, {
+        key: "setFileLength",
+        value: function setFileLength(len) {
+            if (len) {
+                this.fileLength = len;
+                this.files = [];
+            } else {
+                delete UpdateFilesToSVN.waits[this.remoteId];
+                var bytes = new VByteArray();
+                bytes.writeUIntV(this.cmd + 1);
+                bytes.writeUIntV(this.remoteId);
+                this.sendData(bytes);
+                this.success();
+            }
+        }
+    }, {
+        key: "receiveFile",
+        value: function receiveFile(url, data, isEnd) {
+            if (!this.files[url]) {
+                this.files[url] = [];
+            }
+            this.files[url] = this.files[url].concat(data);
+            if (isEnd) {
+                this.fileLength--;
+                if (this.fileLength == 0) {
+                    //文件接收完毕
+                    this.updateSVN();
+                }
+            }
+        }
+    }, {
+        key: "updateSVN",
+        value: function updateSVN() {
+            var content = new File("./data/svn/config.json").readContent();
+            var config = JSON.parse(content);
+            var svnCfg = config[this.svnname];
+            var _this = this;
+            var svn = new SVNShell(svnCfg.url, "./data/svn/" + this.svnname, svnCfg.user, svnCfg.password);
+            this.svn = svn;
+            svn.getReady(function () {
+                svn.update(_this.saveFiles.bind(_this));
+            });
+        }
+    }, {
+        key: "saveFiles",
+        value: function saveFiles() {
+            for (var key in this.files) {
+                var file = new File(this.svn.localsvndir + key);
+                file.save(new Buffer(this.files[key]), "binary");
+            }
+            this.svn.commitAll(this.commitComplete, this);
+        }
+    }, {
+        key: "commitComplete",
+        value: function commitComplete() {
+            delete UpdateFilesToSVN.waits[this.remoteId];
+            var bytes = new VByteArray();
+            bytes.writeUIntV(this.cmd + 1);
+            bytes.writeUIntV(this.remoteId);
+            this.sendData(bytes);
+            this.success();
+        }
+    }]);
+
+    return UpdateFilesToSVN;
+}(TaskBase);
+//////////////////////////End File:remoteServer/tasks/svn/UpdateFilesToSVN.js///////////////////////////
+
+UpdateFilesToSVN.waits = {};
 var server = new RemoteServer();
 server.start(serverPort);

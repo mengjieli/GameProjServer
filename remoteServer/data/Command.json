@@ -7,5 +7,10 @@
   "20": "TransformTask",
   "22": "SendToClientTask",
 
-  "10000": "GetQATestAccountTask"
+  "10000": "GetQATestAccountTask",
+
+  "20000": "GetLocalVersion",
+  "20002": "SaveLocalVersion",
+
+  "30000": "UpdateFilesToSVN"
 }

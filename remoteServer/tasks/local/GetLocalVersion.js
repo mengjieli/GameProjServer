@@ -1,4 +1,4 @@
-class GetClientListTask extends TaskBase {
+class GetLocalVersion extends TaskBase {
 
     constructor(user, fromClient, cmd, msg) {
         super(user, fromClient, cmd, msg);
@@ -11,16 +11,13 @@ class GetClientListTask extends TaskBase {
      */
     startTask(cmd, msg) {
         var remoteId = msg.readUIntV();
-        var name = msg.readUTFV();
-        var clients = Config.getClients(name);
         var bytes = new VByteArray();
         bytes.writeUIntV(this.cmd + 1);
         bytes.writeUIntV(remoteId);
-        bytes.writeUIntV(clients.length);
-        for (var i = 0; i < clients.length; i++) {
-            bytes.writeUTFV(JSON.stringify(clients[i].information));
-        }
-        this.client.sendData(bytes);
+        var content = (new File("./data/local/Config.json")).readContent();
+        var cfg = JSON.parse(content);
+        bytes.writeUTFV(cfg.version);
+        this.sendData(bytes);
         this.success();
     }
 }

@@ -24,7 +24,7 @@ SVNShell.prototype.getReady = function (complete, thisObj) {
 }
 
 SVNShell.prototype.getReadyCreateSVNComplete = function () {
-    console.log("startSVN");
+    //console.log("startSVN");
     this.startSVNServer();
     if (!this.hasCheckOut()) {
         this.checkOut(this.getReadyCheckOut, this);
@@ -136,14 +136,12 @@ SVNShell.prototype.checkOut = function (complete, thisObj) {
 }
 
 /**
- * 更新版本
- * @param complete
- * @param thisObj
+ * diff 目录
  */
-SVNShell.prototype.update = function (complete, thisObj) {
+SVNShell.prototype.updatePath = function (path, complete, thisObj) {
     var content = "";
     var _this = this;
-    new ShellCommand("svn", ["update", this.projectdir], function () {
+    new ShellCommand("svn", ["update", this.projectdir + path, "--username=" + this.user, "--password=" + this.password], function () {
         var start = StringDo.findString(content, "revision ", 0) + "revision ".length;
         var end = StringDo.findString(content, ".", start);
         _this.lastVersion = parseInt(content.slice(start, end));
@@ -154,7 +152,232 @@ SVNShell.prototype.update = function (complete, thisObj) {
     }, null, function (data) {
         content += data;
     }, null, function (data) {
-        console.log("[svn update error]",data);
+        console.log("[svn update error]", data);
+        //如果出错 cleanUp
+        new ShellCommand("svn", ["cleanup", this.projectdir], function () {
+            _this.update(complete, thisObj);
+        });
+    });
+}
+
+/**
+ * diff 目录
+ */
+SVNShell.prototype.diffPath = function (path, complete, thisObj) {
+    var diffs = [];
+    var content = "";
+    var _this = this;
+    new ShellCommand("svn", ["diff", this.projectdir + path], function () {
+        diffs = SVNDifference.changeStringToDifferences(content, _this);
+        if (complete) {
+            complete.apply(thisObj, [diffs]);
+        }
+    }, null, function (data) {
+        content += data;
+    });
+}
+
+/**
+ * diff 目录
+ */
+SVNShell.prototype.commit = function (paths, complete, thisObj) {
+    var diffs = [];
+    var content = "";
+    var _this = this;
+    var params = ["commit", "-m", "自动更新脚本", "--username=" + this.user, "--password=" + this.password];
+    params = params.concat(paths);
+    new ShellCommand("svn", params, function () {
+        diffs = SVNDifference.changeStringToDifferences(content, _this);
+        if (complete) {
+            complete.apply(thisObj, [diffs]);
+        }
+    }, null, function (data) {
+        content += data;
+    }, null, function (data) {
+        console.log("[commit error] ", data);
+    });
+}
+
+/**
+ * list 目录
+ */
+SVNShell.prototype.list = function (path, complete, thisObj) {
+    var diffs = [];
+    var content = "";
+    var _this = this;
+    var params = ["list", this.localsvndir + path, "--username=" + this.user, "--password=" + this.password];
+    new ShellCommand("svn", params, function () {
+        if (complete) {
+            complete.apply(thisObj, [content]);
+        }
+    }, null, function (data) {
+        content += data;
+    }, null, function (data) {
+        console.log("[list error] ", data);
+    });
+}
+
+/**
+ * changelist 目录
+ */
+SVNShell.prototype.changeList = function (complete, thisObj) {
+    var diffs = [];
+    var content = "";
+    var _this = this;
+    var params = ["st", this.localsvndir];
+    new ShellCommand("svn", params, function () {
+        var res = [];
+        var list = content.split("\n");
+        for (var i = 0; i < list.length; i++) {
+            var str = list[i];
+            if (str.length < 3) {
+                continue;
+            }
+            var item = {};
+            var type = str.charAt(0);
+            if (type == "M") {
+                item.type = "modify";
+            } else if (type == "A") {
+                item.type = "modify";
+            } else if (type == "?") {
+                item.type = "new";
+            } else if (type == "!") {
+                item.type = "delete";
+            }
+            str = str.slice(1, str.length);
+            while (str.charAt(0) == " " || str.charAt(0) == "\t") {
+                str = str.slice(1, str.length);
+            }
+            item.url = str;
+            res.push(item);
+        }
+        if (complete) {
+            complete.apply(thisObj, [res]);
+        }
+    }, null, function (data) {
+        content += data;
+    }, null, function (data) {
+        console.log("[list error] ", data);
+    });
+}
+
+/**
+ * diff 目录
+ */
+SVNShell.prototype.addFiles = function (paths, complete, thisObj) {
+    var diffs = [];
+    var content = "";
+    var _this = this;
+    var params = ["add"];
+    params = params.concat(paths);
+    new ShellCommand("svn", params, function () {
+        diffs = SVNDifference.changeStringToDifferences(content, _this);
+        if (complete) {
+            complete.apply(thisObj, [diffs]);
+        }
+    }, null, function (data) {
+        content += data;
+    }, null, function (data) {
+        console.log("[add file error] ", data);
+    });
+}
+
+/**
+ * diff 目录
+ */
+SVNShell.prototype.deleteFiles = function (paths, complete, thisObj) {
+    var diffs = [];
+    var content = "";
+    var _this = this;
+    console.log("delete files:", paths)
+    var params = ["delete"];
+    params = params.concat(paths);
+    new ShellCommand("svn", params, function () {
+        diffs = SVNDifference.changeStringToDifferences(content, _this);
+        if (complete) {
+            complete.apply(thisObj, [diffs]);
+        }
+    }, null, function (data) {
+        content += data;
+    }, null, function (data) {
+        console.log("[add file error] ", data);
+    });
+}
+
+SVNShell.prototype.commitAll = function (complete, thisObj) {
+    var svn = this;
+    svn.changeList(function (list) {
+        var commits = [];
+        for (var i = 0; i < list.length; i++) {
+            commits.push(list[i].url);
+        }
+        if (list.length) {
+            var deleteList = [];
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].type == "delete") {
+                    deleteList.push(list[i].url);
+                }
+            }
+            function doAdd() {
+                var addList = [];
+                for (var i = 0; i < list.length; i++) {
+                    if (list[i].type == "new") {
+                        addList.push(list[i].url);
+                    }
+                }
+                if (addList.length) {
+                    svn.addFiles(addList, function () {
+                        commoit();
+                    })
+                } else {
+                    commoit();
+                }
+            }
+
+            function commoit() {
+                svn.commit(commits, function () {
+                    if (complete) {
+                        complete.apply(thisObj);
+                    }
+                });
+            }
+
+            if (deleteList.length) {
+                svn.deleteFiles(deleteList, function () {
+                    doAdd();
+                })
+            } else {
+                doAdd();
+            }
+
+        } else {
+            if (complete) {
+                complete.apply(thisObj);
+            }
+        }
+    })
+}
+
+/**
+ * 更新版本
+ * @param complete
+ * @param thisObj
+ */
+SVNShell.prototype.update = function (complete, thisObj) {
+    var content = "";
+    var _this = this;
+    new ShellCommand("svn", ["update", this.projectdir, "--username=" + this.user, "--password=" + this.password], function () {
+        var start = StringDo.findString(content, "revision ", 0) + "revision ".length;
+        var end = StringDo.findString(content, ".", start);
+        _this.lastVersion = parseInt(content.slice(start, end));
+        console.log("update content:", content);
+        if (complete) {
+            complete.apply(thisObj);
+        }
+    }, null, function (data) {
+        content += data;
+    }, null, function (data) {
+        console.log("[svn update error]", data);
         //如果出错 cleanUp
         new ShellCommand("svn", ["cleanup", this.projectdir], function () {
             _this.update(complete, thisObj);
