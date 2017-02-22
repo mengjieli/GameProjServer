@@ -558,6 +558,8 @@ var LoginTask = function (_TaskBase4) {
                 };
                 client.hasLogin = true;
                 this.success();
+            } else {
+                this.fail();
             }
             Config.addClient(type, client);
         }
@@ -648,11 +650,100 @@ var TransformTask = function (_TaskBase6) {
 }(TaskBase);
 //////////////////////////End File:remoteServer/tasks/center/TransformTask.js///////////////////////////
 
+//////////////////////////File:remoteServer/tasks/game/GetGameLog.js///////////////////////////
+
+
+var GetGameLog = function (_TaskBase7) {
+    _inherits(GetGameLog, _TaskBase7);
+
+    function GetGameLog(user, fromClient, cmd, msg) {
+        _classCallCheck(this, GetGameLog);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(GetGameLog).call(this, user, fromClient, cmd, msg));
+    }
+
+    /**
+     * 开始执行任务
+     * @param cmd
+     * @param msg
+     */
+
+
+    _createClass(GetGameLog, [{
+        key: "startTask",
+        value: function startTask(cmd, msg) {
+            var date = new Date();
+            var remoteId = msg.readUIntV();
+            var file = new File("./data/game/log/" + date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + "/");
+            var list = file.readFilesWidthEnd("log");
+            for (var i = 0; i < list.length; i++) {
+                var str = list[i].readContent();
+                var len = Math.ceil(str.length / 10000);
+                for (var l = 0; l < len; l++) {
+                    var bytes = new VByteArray();
+                    bytes.writeUIntV(40003);
+                    bytes.writeUIntV(list.length);
+                    bytes.writeUIntV(i);
+                    bytes.writeUTFV(list[i].url);
+                    bytes.writeUIntV(len);
+                    bytes.writeUIntV(l);
+                    bytes.writeUTFV(str.slice(l * 10000, (l + 1) * 10000));
+                    this.sendData(bytes);
+                }
+            }
+            this.success();
+        }
+    }]);
+
+    return GetGameLog;
+}(TaskBase);
+//////////////////////////End File:remoteServer/tasks/game/GetGameLog.js///////////////////////////
+
+//////////////////////////File:remoteServer/tasks/game/SaveGameLog.js///////////////////////////
+
+
+var SaveGameLog = function (_TaskBase8) {
+    _inherits(SaveGameLog, _TaskBase8);
+
+    function SaveGameLog(user, fromClient, cmd, msg) {
+        _classCallCheck(this, SaveGameLog);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(SaveGameLog).call(this, user, fromClient, cmd, msg));
+    }
+
+    /**
+     * 开始执行任务
+     * @param cmd
+     * @param msg
+     */
+
+
+    _createClass(SaveGameLog, [{
+        key: "startTask",
+        value: function startTask(cmd, msg) {
+            var remoteId = msg.readUIntV();
+            var name = msg.readUTFV();
+            var date = new Date();
+            var file = new File("./data/game/log/" + date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + "/" + name + "_" + date.getHours() + ".log");
+            var content = "";
+            if (file.isExist()) {
+                content += file.readContent();
+            }
+            content += date.getMinutes() + ":" + date.getSeconds() + "  " + msg.readUTFV() + "\n";
+            file.save(content);
+            this.success();
+        }
+    }]);
+
+    return SaveGameLog;
+}(TaskBase);
+//////////////////////////End File:remoteServer/tasks/game/SaveGameLog.js///////////////////////////
+
 //////////////////////////File:remoteServer/tasks/local/GetLocalVersion.js///////////////////////////
 
 
-var GetLocalVersion = function (_TaskBase7) {
-    _inherits(GetLocalVersion, _TaskBase7);
+var GetLocalVersion = function (_TaskBase9) {
+    _inherits(GetLocalVersion, _TaskBase9);
 
     function GetLocalVersion(user, fromClient, cmd, msg) {
         _classCallCheck(this, GetLocalVersion);
@@ -689,8 +780,8 @@ var GetLocalVersion = function (_TaskBase7) {
 //////////////////////////File:remoteServer/tasks/local/SaveLocalVersion.js///////////////////////////
 
 
-var SaveLocalVersion = function (_TaskBase8) {
-    _inherits(SaveLocalVersion, _TaskBase8);
+var SaveLocalVersion = function (_TaskBase10) {
+    _inherits(SaveLocalVersion, _TaskBase10);
 
     function SaveLocalVersion(user, fromClient, cmd, msg) {
         _classCallCheck(this, SaveLocalVersion);
@@ -726,8 +817,8 @@ var SaveLocalVersion = function (_TaskBase8) {
 //////////////////////////File:remoteServer/tasks/qaTest/GetQATestAccountTask.js///////////////////////////
 
 
-var GetQATestAccountTask = function (_TaskBase9) {
-    _inherits(GetQATestAccountTask, _TaskBase9);
+var GetQATestAccountTask = function (_TaskBase11) {
+    _inherits(GetQATestAccountTask, _TaskBase11);
 
     function GetQATestAccountTask(user, fromClient, cmd, msg) {
         _classCallCheck(this, GetQATestAccountTask);
@@ -794,8 +885,8 @@ var GetQATestAccountTask = function (_TaskBase9) {
 
 GetQATestAccountTask.index = 0;
 
-var UpdateFilesToSVN = function (_TaskBase10) {
-    _inherits(UpdateFilesToSVN, _TaskBase10);
+var UpdateFilesToSVN = function (_TaskBase12) {
+    _inherits(UpdateFilesToSVN, _TaskBase12);
 
     function UpdateFilesToSVN(user, fromClient, cmd, msg) {
         _classCallCheck(this, UpdateFilesToSVN);

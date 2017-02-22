@@ -12,5 +12,8 @@
   "20000": "GetLocalVersion",
   "20002": "SaveLocalVersion",
 
-  "30000": "UpdateFilesToSVN"
+  "30000": "UpdateFilesToSVN",
+
+  "40000":"SaveGameLog",
+  "40002":"GetGameLog"
 }

@@ -47,6 +47,8 @@ class LoginTask extends TaskBase {
             };
             client.hasLogin = true;
             this.success();
+        } else {
+            this.fail();
         }
         Config.addClient(type, client);
     }
